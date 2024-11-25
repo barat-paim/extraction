@@ -7,7 +7,7 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 import ruptures  # pip install ruptures
 
-path = '/Users/btsznh/Downloads/data1.csv'
+path = '/Users/btsznh/Downloads/data2.csv'
 # read csv file
 df = pd.read_csv(path)
 
@@ -384,43 +384,49 @@ def accuracy_variation_analysis(df):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 12), sharex=True)
     fig.subplots_adjust(hspace=0.1)  # Reduce space between plots
     
-    # Top subplot - Speed over time
-    ax1.scatter(df['Item'], df['Speed'], alpha=0.3, color='red', label='Speed')
-    ax1.plot(df['Item'], df['Speed'].rolling(window=10).mean(), 'r-', 
-            label='Speed Trend (10-item rolling mean)', linewidth=2)
+    # Top subplot - Speed over time with confidence bands
+    window_size = 10
+    speed_rolling_mean = df['Speed'].rolling(window=window_size).mean()
+    speed_rolling_std = df['Speed'].rolling(window=window_size).std()
+    
+    # Calculate speed confidence intervals
+    speed_upper_bound = speed_rolling_mean + (2 * speed_rolling_std)
+    speed_lower_bound = speed_rolling_mean - (2 * speed_rolling_std)
+    
+    # Plot speed data
+    ax1.scatter(df['Item'], df['Speed'], color='red', alpha=0.3, label='Speed')
+    ax1.plot(df['Item'], speed_rolling_mean, 'r-', 
+             label=f'Speed Rolling Mean (window={window_size})', linewidth=2)
+    ax1.plot(df['Item'], speed_upper_bound, 'r--', label='Speed Upper Bound (95% CI)', alpha=0.7)
+    ax1.plot(df['Item'], speed_lower_bound, 'r--', label='Speed Lower Bound (95% CI)', alpha=0.7)
+    ax1.fill_between(df['Item'], speed_lower_bound, speed_upper_bound, 
+                     color='red', alpha=0.1)
     ax1.set_ylabel('Speed')
     ax1.set_title('Speed and Accuracy Variation Analysis Over Time')
     ax1.legend()
     ax1.grid(True)
     
     # Bottom subplot - Accuracy variation
-    window_size = 10
-    rolling_mean = df['Accuracy'].rolling(window=window_size).mean()
-    rolling_std = df['Accuracy'].rolling(window=window_size).std()
+    accuracy_rolling_mean = df['Accuracy'].rolling(window=window_size).mean()
+    accuracy_rolling_std = df['Accuracy'].rolling(window=window_size).std()
     
-    # Calculate confidence intervals
-    upper_bound = rolling_mean + (2 * rolling_std)
-    lower_bound = rolling_mean - (2 * rolling_std)
+    # Calculate accuracy confidence intervals
+    accuracy_upper_bound = accuracy_rolling_mean + (2 * accuracy_rolling_std)
+    accuracy_lower_bound = accuracy_rolling_mean - (2 * accuracy_rolling_std)
     
     # Plot accuracy data
-    ax2.scatter(df['Item'], df['Accuracy'], alpha=0.3, color='blue', label='Actual Accuracy')
-    ax2.plot(df['Item'], rolling_mean, 'b-', 
+    ax2.scatter(df['Item'], df['Accuracy'], color='blue', alpha=0.3, label='Actual Accuracy')
+    ax2.plot(df['Item'], accuracy_rolling_mean, 'b-', 
             label=f'Accuracy Rolling Mean (window={window_size})', linewidth=2)
-    ax2.plot(df['Item'], upper_bound, 'g--', label='Upper Bound (95% CI)', alpha=0.7)
-    ax2.plot(df['Item'], lower_bound, 'g--', label='Lower Bound (95% CI)', alpha=0.7)
-    ax2.fill_between(df['Item'], lower_bound, upper_bound, color='green', alpha=0.1)
-    
-    # Add standard deviation trend on secondary y-axis
-    ax3 = ax2.twinx()
-    rolling_std_trend = rolling_std.rolling(window=window_size).mean()
-    ax3.plot(df['Item'], rolling_std_trend, 'k:', label='StdDev Trend', alpha=0.5)
-    ax3.set_ylabel('Standard Deviation', color='k')
+    ax2.plot(df['Item'], accuracy_upper_bound, 'b--', label='Accuracy Upper Bound (95% CI)', alpha=0.7)
+    ax2.plot(df['Item'], accuracy_lower_bound, 'b--', label='Accuracy Lower Bound (95% CI)', alpha=0.7)
+    ax2.fill_between(df['Item'], accuracy_lower_bound, accuracy_upper_bound, 
+                     color='blue', alpha=0.1)
     
     # Set labels and legends for bottom plot
     ax2.set_xlabel('Item (Time)')
     ax2.set_ylabel('Accuracy')
-    ax2.legend(loc='upper left')
-    ax3.legend(loc='upper right')
+    ax2.legend()
     ax2.grid(True)
     
     # Print analysis results
@@ -428,48 +434,73 @@ def accuracy_variation_analysis(df):
     print(f"Overall Mean Accuracy: {df['Accuracy'].mean():.4f}")
     print(f"Overall StdDev: {df['Accuracy'].std():.4f}")
     
-    # Analyze if variation is increasing or decreasing
-    first_half_std = df['Accuracy'][:len(df)//2].std()
-    second_half_std = df['Accuracy'][len(df)//2:].std()
-    print(f"\nFirst Half StdDev: {first_half_std:.4f}")
-    print(f"Second Half StdDev: {second_half_std:.4f}")
+    # Analyze if variation is increasing or decreasing for both metrics
+    # For Accuracy
+    first_half_accuracy_std = df['Accuracy'][:len(df)//2].std()
+    second_half_accuracy_std = df['Accuracy'][len(df)//2:].std()
     
-    variation_trend = "increasing" if second_half_std > first_half_std else "decreasing"
-    print(f"Accuracy variation is {variation_trend}")
+    # For Speed
+    first_half_speed_std = df['Speed'][:len(df)//2].std()
+    second_half_speed_std = df['Speed'][len(df)//2:].std()
     
-    # Calculate convergence ratio
-    convergence_ratio = first_half_std / second_half_std
-    print(f"Convergence ratio: {convergence_ratio:.2f}")
-    if convergence_ratio > 1:
-        print("Accuracy is becoming more consistent over time")
-    else:
-        print("Accuracy is becoming more variable over time")
+    print("\nAccuracy Analysis:")
+    print(f"First Half StdDev: {first_half_accuracy_std:.4f}")
+    print(f"Second Half StdDev: {second_half_accuracy_std:.4f}")
+    
+    accuracy_trend = "increasing" if second_half_accuracy_std > first_half_accuracy_std else "decreasing"
+    print(f"Accuracy variation is {accuracy_trend}")
+    
+    accuracy_convergence = first_half_accuracy_std / second_half_accuracy_std
+    print(f"Accuracy convergence ratio: {accuracy_convergence:.2f}")
+    print("Accuracy is becoming more consistent over time" if accuracy_convergence > 1 
+          else "Accuracy is becoming more variable over time")
+    
+    print("\nSpeed Analysis:")
+    print(f"First Half StdDev: {first_half_speed_std:.4f}")
+    print(f"Second Half StdDev: {second_half_speed_std:.4f}")
+    
+    speed_trend = "increasing" if second_half_speed_std > first_half_speed_std else "decreasing"
+    print(f"Speed variation is {speed_trend}")
+    
+    speed_convergence = first_half_speed_std / second_half_speed_std
+    print(f"Speed convergence ratio: {speed_convergence:.2f}")
+    print("Speed is becoming more consistent over time" if speed_convergence > 1 
+          else "Speed is becoming more variable over time")
     
     plt.show()
     
     return {
-        'mean_accuracy': df['Accuracy'].mean(),
-        'overall_std': df['Accuracy'].std(),
-        'first_half_std': first_half_std,
-        'second_half_std': second_half_std,
-        'convergence_ratio': convergence_ratio
+        'accuracy_metrics': {
+            'mean': df['Accuracy'].mean(),
+            'overall_std': df['Accuracy'].std(),
+            'first_half_std': first_half_accuracy_std,
+            'second_half_std': second_half_accuracy_std,
+            'convergence_ratio': accuracy_convergence
+        },
+        'speed_metrics': {
+            'mean': df['Speed'].mean(),
+            'overall_std': df['Speed'].std(),
+            'first_half_std': first_half_speed_std,
+            'second_half_std': second_half_speed_std,
+            'convergence_ratio': speed_convergence
+        }
     }
 
 # Run the analysis based on the analysis type. define if condition
-analysis_type = input('Enter the analysis type (1: linear, 2: non-linear, 3: detailed segmented, 4: speed-accuracy, 5: accuracy performance): ')
-if analysis_type == '1':   
-    linear_analysis(df)
-elif analysis_type == '2':
-    non_linear_analysis(df)
-elif analysis_type == '3':
-    detailed_segmented_analysis(df)
-elif analysis_type == '4':
-    speed_accuracy_analysis(df)
-elif analysis_type == '5':
-    speed_performance_analysis(df)
-elif analysis_type == '6':
-    accuracy_variation_analysis(df)
+analysis_functions = {
+    '1': linear_analysis,
+    '2': non_linear_analysis,
+    '3': detailed_segmented_analysis,
+    '4': speed_accuracy_analysis,
+    '5': speed_performance_analysis,
+    '6': accuracy_variation_analysis
+}
+
+analysis_type = input('Enter the analysis type (1: linear, 2: non-linear, 3: detailed segmented, 4: speed-accuracy, 5: accuracy performance, 6: accuracy variation): ')
+analysis_function = analysis_functions.get(analysis_type)
+
+if analysis_function:
+    analysis_function(df)
 else:
     print('Invalid analysis type')
-
 
