@@ -2,7 +2,23 @@ import requests
 import os
 from datetime import datetime
 
-def get_next_bus(stop_name, direction=None):
+def parse_direction(direction_input):
+    """Convert user input into standardized direction"""
+    if not direction_input:
+        return None
+        
+    direction_input = direction_input.lower().strip()
+    
+    eastbound = ['east', 'eastbound', 'e', 'eb', 'towards 1st ave', 'to 1st']
+    westbound = ['west', 'westbound', 'w', 'wb', 'towards broadway', 'to broadway']
+    
+    if any(term in direction_input for term in eastbound):
+        return "eastbound"
+    if any(term in direction_input for term in westbound):
+        return "westbound"
+    return None
+
+def get_next_bus(stop_name, direction_input=None):
     url = "https://bustime.mta.info/api/siri/vehicle-monitoring.json"
     params = {
         "key": os.getenv('MTA_API_KEY'),
@@ -10,6 +26,7 @@ def get_next_bus(stop_name, direction=None):
     }
 
     try:
+        direction = parse_direction(direction_input)
         response = requests.get(url, params=params)
         data = response.json()
         vehicles = data['Siri']['ServiceDelivery']['VehicleMonitoringDelivery'][0]['VehicleActivity']
@@ -23,7 +40,7 @@ def get_next_bus(stop_name, direction=None):
                 stop = journey['MonitoredCall']
                 if stop_name.lower() in stop['StopPointName'].lower():
                     if direction:
-                        dir_ref = "0" if direction.lower() == "eastbound" else "1"
+                        dir_ref = "0" if direction == "eastbound" else "1"
                         if journey['DirectionRef'] != dir_ref:
                             continue
                     
@@ -42,8 +59,11 @@ def get_next_bus(stop_name, direction=None):
     except Exception as e:
         return f"Error: {str(e)}"
 
-# Test case
+# Test cases
 if __name__ == "__main__":
-    print("\nNext bus at Madison Ave:")
-    print(get_next_bus("MADISON"))
+    print("\nNext eastbound bus at Madison Ave:")
+    print(get_next_bus("MADISON", "towards 1st ave"))
+    
+    print("\nNext westbound bus at Madison Ave:")
+    print(get_next_bus("MADISON", "w"))
 

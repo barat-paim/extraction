@@ -40,3 +40,18 @@ we need to query the data for the stop and direction that the user wants to know
 1. allow filtering by stop name and directoin
 2. return structured data for each matching bus
 3. include test cases
+
+VERSION 1.2.1
+*userstory*
+users want to know the bus in certain direction at a certain stop
+
+*solution*:
+Added parse_direction function to handle various direction inputs
+Accepts natural language direction inputs (rule-based), you can add more rules if you want or use a LLM to parse the direction
+
+Added more test cases with different direction formats
+The code now accepts inputs like:
+"east", "towards 1st ave", "e", "eb"
+"west", "towards broadway", "w", "wb"
+
+
