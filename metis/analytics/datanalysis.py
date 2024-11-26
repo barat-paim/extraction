@@ -7,7 +7,7 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 import ruptures  # pip install ruptures
 
-path = '/Users/btsznh/Downloads/data3.csv'
+path = '/Users/btsznh/met/metis/typeracer_complete.csv'
 # read csv file
 df = pd.read_csv(path)
 
