@@ -13,10 +13,30 @@ Key Information (OR)
 VERSION 1.0
 Pull the MTA bus time
 
-commits: simple pull using request and API key and display the data
-problem: the data is not readable
-solution: parse the data into a readable format or display only the information that we want
+*solution*:
+simple pull using request and API key and display the data
 
+*success*: 
+the data is pulled and displayed
 
+VERSION 1.1
+*problem*: the data is not readable
+*commit*:Parse the data into a readable format
 
+*solution*:
+use response.json() to get the data and then use the data to display the information we want.
 
+*success*: 
+the data is pulled and displayed in a readable format
+
+VERSION 1.2
+*userstory*
+user wants to know the next bus at a certain stop in a certain direction.
+*problem*:
+the data is currently restricted to the bus line M57 and displays all the buses on that line. we need to add the ability to search for a certain stop and direction.
+*solution*:
+we need to query the data for the stop and direction that the user wants to know about
+*test*:
+1. allow filtering by stop name and directoin
+2. return structured data for each matching bus
+3. include test cases
