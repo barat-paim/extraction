@@ -3,3 +3,18 @@ venv/*
 venv/
 readme.md/
 readme.md
+
+
+# Debug and temporary files
+*.html
+*.png
+*.csv
+
+# SQLite temporary files
+.headers
+.mode
+.quit
+SELECT
+
+# Database (uncomment if you want to regenerate it)
+# typeracer.db
