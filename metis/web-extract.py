@@ -12,22 +12,25 @@ def init_database():
     conn = sqlite3.connect('typeracer.db')
     c = conn.cursor()
     
-    # Create races table
+    # Create races table with username field
     c.execute('''
         CREATE TABLE IF NOT EXISTS races (
-            race_id INTEGER PRIMARY KEY,
+            race_id INTEGER,
+            username TEXT,
             speed REAL,
             accuracy REAL,
             position TEXT,
             race_date TIMESTAMP,
-            fetch_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            fetch_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (race_id, username)
         )
     ''')
     
-    # Create table to track last fetch
+    # Update fetch_history table to include username
     c.execute('''
         CREATE TABLE IF NOT EXISTS fetch_history (
             id INTEGER PRIMARY KEY,
+            username TEXT,
             last_fetch TIMESTAMP,
             races_added INTEGER
         )
@@ -43,21 +46,23 @@ def get_last_race_id(conn):
     result = c.fetchone()[0]
     return result if result is not None else 0
 
-def store_races(conn, races_data):
+def store_races(conn, races_data, username):
     """Store new races in database"""
     c = conn.cursor()
     new_races = 0
     
     for race in races_data:
-        # Check if race already exists
-        c.execute('SELECT 1 FROM races WHERE race_id = ?', (race['Item'],))
+        # Check if race already exists for this user
+        c.execute('SELECT 1 FROM races WHERE race_id = ? AND username = ?', 
+                 (race['Item'], username))
         if not c.fetchone():
             try:
                 c.execute('''
-                    INSERT INTO races (race_id, speed, accuracy, position, race_date)
-                    VALUES (?, ?, ?, ?, datetime(?, 'unixepoch'))
+                    INSERT INTO races (race_id, username, speed, accuracy, position, race_date)
+                    VALUES (?, ?, ?, ?, ?, datetime(?, 'unixepoch'))
                 ''', (
                     race['Item'],
+                    username,
                     race['Speed'],
                     race['Accuracy'],
                     race['Position'],
@@ -67,12 +72,12 @@ def store_races(conn, races_data):
             except sqlite3.Error as e:
                 print(f"Error inserting race {race['Item']}: {e}")
     
-    # Record fetch history
+    # Record fetch history with username
     if new_races > 0:
         c.execute('''
-            INSERT INTO fetch_history (last_fetch, races_added)
-            VALUES (CURRENT_TIMESTAMP, ?)
-        ''', (new_races,))
+            INSERT INTO fetch_history (username, last_fetch, races_added)
+            VALUES (?, CURRENT_TIMESTAMP, ?)
+        ''', (username, new_races))
     
     conn.commit()
     return new_races
@@ -153,15 +158,13 @@ def get_stats(conn):
 def main():
     """Main function to fetch and store race data"""
     conn = init_database()
+    username = 'barat_paim'
     
     try:
-        # Fetch new data
-        races_data = fetch_data()
+        races_data = fetch_data(username)
         if races_data:
-            # Store in database
-            new_races = store_races(conn, races_data)
+            new_races = store_races(conn, races_data, username)
             
-            # Show what was done
             if new_races > 0:
                 print(f"\nDatabase Update Summary:")
                 print(f"- Fetched {len(races_data)} races from API")
@@ -171,7 +174,6 @@ def main():
             else:
                 print("\nNo new races to add - all races already in database")
             
-            # Show statistics
             stats = get_stats(conn)
             print("\nDatabase Statistics:")
             print(f"Total Races: {stats['total_races']}")
