@@ -18,3 +18,15 @@ SELECT
 
 # Database (uncomment if you want to regenerate it)
 typeracer.db
+
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Database
+mercury/data/*.db
+
+# Environment variables
+.env
