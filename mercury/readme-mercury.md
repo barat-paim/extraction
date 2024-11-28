@@ -54,4 +54,10 @@ The code now accepts inputs like:
 "east", "towards 1st ave", "e", "eb"
 "west", "towards broadway", "w", "wb"
 
+VERSION 1.2.2 (open it up)
+*userstory*
+users want to know the next bus at a any stop in any direction
+
+*solution*:
+light weigth LLM to handle the natural language query and the pass to get the next bus function
 

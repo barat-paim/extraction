@@ -10,8 +10,10 @@ from config import load_config
 
 class BusDataStore:
     def __init__(self, db_path='mercury/data/bus_data.db'):
+        # Create data directory if it doesn't exist
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        
         self.config = load_config()
-        os.makedirs('mercury/data', exist_ok=True)
         self.conn = sqlite3.connect(db_path)
         self.create_tables()
         
