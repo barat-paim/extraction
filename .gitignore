@@ -1,9 +1,13 @@
+# SQLite database files
+*.db
+
 .venv/
 venv/*
 venv/
 readme.md/
 readme.md
-
+ENV/
+.venv/
 
 # Debug and temporary files
 *.html
@@ -18,7 +22,13 @@ SELECT
 
 # Database (uncomment if you want to regenerate it)
 typeracer.db
+*.csv
 
+
+Thumbs.db
+ehthumps.db
+.Trashes
+._*
 
 # Python
 __pycache__/
