@@ -85,65 +85,48 @@ def store_races(conn, races_data, username):
 
 def fetch_data(username='barat_paim', n=50):
     """Fetch typing race history data from API"""
-    all_races = []
-    batch_size = 50  # API limit per request
-    total_requested = n
-    start_date = 0
+    url = f'https://data.typeracer.com/games?playerId=tr:{username}&universe=play&startDate=0&n={n}'
     
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/json'
     }
     
-    while len(all_races) < total_requested:
-        url = f'https://data.typeracer.com/games?playerId=tr:{username}&universe=play&startDate={start_date}&n={batch_size}'
+    try:
+        print(f"Fetching race data from API: {url}")
+        response = requests.get(url, headers=headers, verify=False)
         
-        try:
-            print(f"Fetching batch of races from API: {url}")
-            response = requests.get(url, headers=headers, verify=False)
+        if response.status_code == 200:
+            races_data = []
+            data = response.json()
             
-            if response.status_code == 200:
-                data = response.json()
-                if not data:  # No more races to fetch
-                    break
-                
-                # Debug: Print raw accuracy values from first batch
-                if start_date == 0:
-                    print("\nRaw accuracy values from last 5 races:")
-                    for race in data[:5]:
-                        print(f"Race {race.get('gn')}: Raw accuracy = {race.get('ac'):.5f}")
-                
-                # Process the batch
-                for race in data:
-                    try:
-                        race_data = {
-                            'Item': race.get('gn', 0),
-                            'Speed': race.get('wpm', 0),
-                            'Accuracy': race.get('ac', 0),
-                            'Position': f"{race.get('r', 0)}/{race.get('n', 0)}",
-                            'Date': race.get('t', 'unknown')
-                        }
-                        all_races.append(race_data)
-                    except Exception as e:
-                        print(f"Error parsing race data: {e}")
-                        continue
-                
-                # Update start_date for next batch
-                if data:
-                    start_date = data[-1]['t']  # Use timestamp of last race
-                
-                print(f"Fetched {len(data)} races (Total: {len(all_races)})")
-                
-            else:
-                print(f"Failed to fetch data. Status code: {response.status_code}")
-                break
-                
-        except Exception as e:
-            print(f"Error: {str(e)}")
-            break
-    
-    print(f"\nFetched a total of {len(all_races)} races")
-    return all_races
+            print("\nRaw accuracy values from last 5 races:")
+            for race in data[:5]:
+                print(f"Race {race.get('gn')}: Raw accuracy = {race.get('ac'):.5f}")
+            
+            for race in data:
+                try:
+                    race_data = {
+                        'Item': race.get('gn', 0),
+                        'Speed': race.get('wpm', 0),
+                        'Accuracy': race.get('ac', 0),
+                        'Position': f"{race.get('r', 0)}/{race.get('n', 0)}",
+                        'Date': race.get('t', 'unknown')
+                    }
+                    races_data.append(race_data)
+                except Exception as e:
+                    print(f"Error parsing race data: {e}")
+                    continue
+            
+            return races_data
+            
+        else:
+            print(f"Failed to fetch data. Status code: {response.status_code}")
+            return None
+            
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return None
 
 def get_stats(conn):
     """Get basic statistics from the database"""
@@ -179,10 +162,11 @@ def get_stats(conn):
 
 def main():
     """Main function to fetch and store race data"""
+    # Get user input
     username = input("Enter TypeRacer username: ")
     try:
-        n_races = int(input("Enter number of races to fetch: "))  # Removed max limit
-        n_races = max(1, n_races)  # Only ensure it's positive
+        n_races = int(input("Enter number of races to fetch (max 50): "))
+        n_races = min(50, max(1, n_races))  # Ensure between 1 and 50
     except ValueError:
         print("Invalid input. Using default value of 50 races.")
         n_races = 50

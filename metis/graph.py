@@ -12,7 +12,7 @@ import os
 
 def load_data_from_db(username):
     """Load data from SQLite database for a specific username"""
-    db_path = f'metis/typeracer_{username}.db'
+    db_path = f'typeracer_{username}.db'
     
     try:
         print(f"Attempting to connect to database: {os.path.abspath(db_path)}")
