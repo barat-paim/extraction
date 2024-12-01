@@ -7,9 +7,10 @@ import warnings
 import os
 warnings.filterwarnings('ignore', category=Warning)
 
-def init_database():
-    """Initialize SQLite database and create tables if they don't exist"""
-    conn = sqlite3.connect('typeracer.db')
+def init_database(username):
+    """Initialize SQLite database with username-specific file"""
+    db_name = f'typeracer_{username}.db'
+    conn = sqlite3.connect(db_name)
     c = conn.cursor()
     
     # Create races table with username field
@@ -99,12 +100,16 @@ def fetch_data(username='barat_paim', n=50):
             races_data = []
             data = response.json()
             
+            print("\nRaw accuracy values from last 5 races:")
+            for race in data[:5]:
+                print(f"Race {race.get('gn')}: Raw accuracy = {race.get('ac'):.5f}")
+            
             for race in data:
                 try:
                     race_data = {
                         'Item': race.get('gn', 0),
                         'Speed': race.get('wpm', 0),
-                        'Accuracy': race.get('ac', 0) / 100 if race.get('ac') else 0,
+                        'Accuracy': race.get('ac', 0),
                         'Position': f"{race.get('r', 0)}/{race.get('n', 0)}",
                         'Date': race.get('t', 'unknown')
                     }
@@ -157,11 +162,20 @@ def get_stats(conn):
 
 def main():
     """Main function to fetch and store race data"""
-    conn = init_database()
-    username = 'barat_paim'
+    # Get user input
+    username = input("Enter TypeRacer username: ")
+    try:
+        n_races = int(input("Enter number of races to fetch (max 50): "))
+        n_races = min(50, max(1, n_races))  # Ensure between 1 and 50
+    except ValueError:
+        print("Invalid input. Using default value of 50 races.")
+        n_races = 50
+
+    # Initialize new database for this user
+    conn = init_database(username)
     
     try:
-        races_data = fetch_data(username)
+        races_data = fetch_data(username, n_races)
         if races_data:
             new_races = store_races(conn, races_data, username)
             
@@ -183,7 +197,7 @@ def main():
             for fetch in stats['recent_fetches']:
                 print(f"- {fetch[0]}: Added {fetch[1]} races")
             
-            print(f"\nData stored in: {os.path.abspath('typeracer.db')}")
+            print(f"\nData stored in: {os.path.abspath(f'typeracer_{username}.db')}")
     
     finally:
         conn.close()
