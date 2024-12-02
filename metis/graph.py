@@ -55,7 +55,7 @@ def load_data_from_db(username):
         return None
     
 # Get Username input
-username = input("Enter TypeRacer username: ")
+username = input("Enter username: ")
 df = load_data_from_db(username)
 
 if df is None:
@@ -119,7 +119,7 @@ def linear_analysis(df):
     plt.show()
 
     # Save results to file
-    df.to_csv('analysis_results.csv', index=False)
+    df.to_csv('linear_analysis_results.csv', index=False)
 
 def non_linear_analysis(df):
     import numpy as np
